@@ -40,14 +40,14 @@ export function App() {
     {error && <p role="alert">{error}</p>}
     {view === 'Companies' && <div className="layout"><aside>
       <input aria-label="Search companies" placeholder="Search companies" value={query} onChange={e => search(e.target.value)} />
-      <p className="muted">{companies.length} company mentions</p>
+      <p className="muted">{companies.length} companies</p>
       {companies.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).map(c =>
         <button className={'entity ' + (selected === c.id ? 'active' : '')} key={c.id} onClick={() => select(c.id)}>
           <strong>{c.name}</strong><small>{c.sector_id || 'Sector unknown'}</small></button>)}
     </aside><section>{detail ? <Detail company={detail} /> : <p className="empty">Select a company to inspect its evidence.</p>}</section></div>}
     {view === 'Sources' && <section>{sources.map(s => <article key={s.id}>
       <h2>{s.title}</h2><p>{s.provider} · {s.external_id}</p>
-      <a href={'/api/sources/' + s.id} target="_blank" rel="noreferrer">Normalized transcript + metadata</a>{' · '}
+      <a href={'/api/sources/' + s.id} target="_blank" rel="noreferrer">Source record + evidence</a>{' · '}
       <a href={'/api/sources/' + s.id + '/artifact'} target="_blank" rel="noreferrer">Original artifact</a>
     </article>)}</section>}
     {view === 'Runs' && <section>{runs.map(r => <article key={r.id}>

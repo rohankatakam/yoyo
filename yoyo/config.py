@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = True
     openai_api_key: str = ""
     model: str = ""
+    exa_api_key: str = ""
+    embedding_model: str = "text-embedding-3-small"
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
 
 

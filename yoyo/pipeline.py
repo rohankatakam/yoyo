@@ -5,7 +5,9 @@ from pathlib import Path
 
 from .artifacts import digest, store_json
 from .claim_models import Candidates, Classifications
-from .commit import commit_findings
+from .commit import commit_findings, counts
+from . import db
+from .resolution.findings import resolve_findings
 from .config import settings
 from .model import call_model
 from .grounding import ground
@@ -30,7 +32,14 @@ def chunks(segments, limit=14000):
 
 
 def process(
-    path, metadata_path, episode_id, *, resume=None, max_calls=30, tracing=True
+    path,
+    metadata_path,
+    episode_id,
+    *,
+    resume=None,
+    max_calls=30,
+    tracing=True,
+    matching="lexical",
 ):
     if not settings.model or not settings.openai_api_key:
         raise ValueError("Set MODEL and OPENAI_API_KEY in .env")
@@ -50,7 +59,8 @@ def process(
         "source_id": source["id"],
         "model": settings.model,
         "max_calls": max_calls,
-        "pipeline": "claims-v3",
+        "pipeline": "claims-v4-resolution",
+        "matching": matching,
         "prompt_hash": digest([EXTRACT, ANNOTATE]),
     }
     state = State(inputs, resume)
@@ -140,6 +150,13 @@ def process(
             [c.model_dump() for c in accepted.values()]
         )
         state.save()
+        if "ledger_before" not in state.progress:
+            with db.engine.connect() as conn:
+                state.progress["ledger_before"] = counts(conn)
+            state.save()
+        findings, annotations, resolved_ids, added_ids = resolve_findings(
+            source, list(accepted.values()), annotations, state, trace, matching
+        )
         provenance = {
             "model": settings.model,
             "prompt_hash": inputs["prompt_hash"],
@@ -152,10 +169,13 @@ def process(
             result = commit_findings(
                 source,
                 transcript,
-                list(accepted.values()),
+                findings,
                 annotations,
                 state.id,
                 provenance,
+                resolved_companies=resolved_ids,
+                before_counts=state.progress["ledger_before"],
+                added_company_ids=added_ids,
             )
             output.update(result)
         trace.finish(result)

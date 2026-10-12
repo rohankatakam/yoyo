@@ -31,6 +31,9 @@ def commit_findings(
     run_id,
     provenance,
     *,
+    resolved_companies,
+    before_counts=None,
+    added_company_ids=(),
     fail_after_source=False,
 ):
     validated = [(claim, validate_claim(claim, transcript)) for claim in findings]
@@ -40,31 +43,44 @@ def commit_findings(
             validate_annotation(annotation, claim)
     with db.engine.begin() as conn:
         conn.execute(text("SELECT pg_advisory_xact_lock(91827461)"))
-        before = counts(conn)
+        before = before_counts or counts(conn)
         save(conn, db.sources, **source, run_id=run_id)
         if fail_after_source:
             raise RuntimeError("Injected interruption before findings")
-        claim_ids, new_entities = [], set()
+        claim_ids, new_entities = [], set(added_company_ids)
         for claim, locators in validated:
             participants = []
             for p in claim.participants:
-                table = db.companies if p.kind == "company" else db.people
-                entity_id = stable(p.kind, transcript.external_id, p.name.casefold())
-                values = dict(
-                    id=entity_id,
-                    name=p.name,
-                    identity={
-                        "status": "episode_scoped_unresolved",
-                        "rationale": "Quoted mention only; global identity and external identifiers unverified.",
-                        "source_id": source["id"],
-                        "run_id": run_id,
-                    },
-                )
                 if p.kind == "company":
-                    values["field_evidence"] = {}
-                created = save(conn, table, **values)
-                if created and p.kind == "company":
-                    new_entities.add(entity_id)
+                    entity_id = resolved_companies.get(p.name.casefold())
+                    entity = (
+                        conn.execute(
+                            select(db.companies).where(db.companies.c.id == entity_id)
+                        )
+                        .mappings()
+                        .first()
+                    )
+                    if (
+                        not entity
+                        or entity["identity"].get("status") != "source_verified"
+                    ):
+                        raise ValueError(
+                            "Company must pass lookup/resolve/enrichment before claim commit"
+                        )
+                else:
+                    entity_id = stable(
+                        "person", transcript.external_id, p.name.casefold()
+                    )
+                    save(
+                        conn,
+                        db.people,
+                        id=entity_id,
+                        name=p.name,
+                        identity={
+                            "status": "episode_scoped_unresolved",
+                            "source_id": source["id"],
+                        },
+                    )
                 participants.append(dict(p.model_dump(), id=entity_id))
             # Include every participant and the claimant label. No semantic auto-merging.
             claim_id = stable(

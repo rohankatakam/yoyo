@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, select, text
 
 from yoyo import db
 from yoyo.api import app
-from yoyo.artifacts import digest
+from yoyo.artifacts import digest, stable
 from yoyo.claim_models import Annotation, Candidate
 from yoyo.commit import commit_findings, counts
 from yoyo.config import settings
@@ -84,6 +84,18 @@ def execute(*, revision=None, fail=False):
                 trace_status="disabled",
             )
         )
+    from yoyo.commit import save
+
+    company_id = stable("test-company", "acme")
+    with db.engine.begin() as c:
+        save(
+            c,
+            db.companies,
+            id=company_id,
+            name="Acme",
+            identity={"status": "source_verified"},
+            field_evidence={},
+        )
     return commit_findings(
         source,
         transcript,
@@ -91,6 +103,7 @@ def execute(*, revision=None, fail=False):
         {digest(claim.model_dump()): annotation},
         run_id,
         {},
+        resolved_companies={"acme": company_id},
         fail_after_source=fail,
     )
 
@@ -102,7 +115,7 @@ def snapshot():
 
 def test_replay_and_restart_traceability():
     first, second = execute(), execute()
-    assert first["delta"]["companies"] == 1
+    assert first["delta"]["companies"] == 0 and snapshot()["companies"] == 1
     assert all(n == 0 for n in second["delta"].values())
     db.engine.dispose()
     client = TestClient(app)
@@ -121,14 +134,16 @@ def test_replay_and_restart_traceability():
 def test_atomic_failure_and_retry():
     with pytest.raises(RuntimeError):
         execute(fail=True)
-    assert all(n == 0 for n in snapshot().values())
+    assert snapshot()["claims"] == 0 and snapshot()["sources"] == 0
     assert execute()["delta"]["claims"] == 1
 
 
 def test_concurrent_replay_and_new_evidence():
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(lambda _: execute(), range(2)))
-    assert sum(r["delta"]["companies"] for r in results) == 1
+    assert (
+        sum(r["delta"]["claims"] for r in results) == 1 and snapshot()["companies"] == 1
+    )
     result = execute(revision="new source version")
     assert result["delta"]["claims"] == 0 and result["delta"]["evidence"] == 1
 
@@ -207,3 +222,25 @@ def test_plain_rerun_reuses_interrupted_run_and_optional_failure_stays_unknown()
         assert resumed.progress["operations"]["repair"]["status"] == "unknown_outcome"
     finally:
         resumed.close()
+
+
+def test_claim_commit_cannot_create_unresolved_company():
+    raw, transcript, claim, annotation = input_data()
+    source = source_record(transcript, raw, {"title": "Blocked"})
+    run_id = str(uuid4())
+    with db.engine.begin() as c:
+        c.execute(
+            db.runs.insert().values(
+                id=run_id,
+                status="running",
+                input={},
+                progress={},
+                operation_key=run_id,
+                trace_status="disabled",
+            )
+        )
+    with pytest.raises(ValueError, match="must pass lookup"):
+        commit_findings(
+            source, transcript, [claim], {}, run_id, {}, resolved_companies={}
+        )
+    assert snapshot()["companies"] == 0 and snapshot()["claims"] == 0
