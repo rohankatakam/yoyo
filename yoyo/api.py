@@ -1,8 +1,11 @@
+from uuid import UUID
+
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy import select
+
 from . import db
-from .config import settings
+from .artifacts import read_bytes
 
 app = FastAPI(title="Yoyo evidence ledger")
 
@@ -19,55 +22,49 @@ def health():
 
 
 @app.get("/api/companies")
-def list_companies():
+def companies():
     with db.engine.connect() as conn:
         return rows(conn, select(db.companies).order_by(db.companies.c.name))
 
 
 @app.get("/api/companies/{company_id}")
-def company(company_id: str):
+def company(company_id: UUID):
     with db.engine.connect() as conn:
         entity = (
-            conn.execute(select(db.companies).where(db.companies.c.id == company_id))
+            conn.execute(
+                select(db.companies).where(db.companies.c.id == str(company_id))
+            )
             .mappings()
             .first()
         )
         if not entity:
             raise HTTPException(404, "Company not found")
         findings = rows(
-            conn, select(db.claims).where(db.claims.c.company_id == company_id)
+            conn,
+            select(db.claims).where(
+                db.claims.c.participants.contains([{"id": str(company_id)}])
+            ),
         )
         for finding in findings:
             finding["evidence"] = rows(
                 conn,
                 select(
-                    db.evidence.c.quote,
-                    db.evidence.c.attribution_status,
-                    db.passages.c.start,
-                    db.passages.c.end,
-                    db.passages.c.speaker_label,
-                    db.passages.c.segment_index,
-                    db.sources.c.id.label("source_id"),
+                    db.evidence,
                     db.sources.c.title,
                     db.sources.c.url,
-                    db.sources.c.sha256,
-                    db.sources.c.parent_sha256,
-                    db.sources.c.provenance,
-                    db.sources.c.run_id,
+                    db.sources.c.content,
+                    db.sources.c.metadata,
+                    db.sources.c.raw_artifact,
                 )
-                .select_from(db.evidence.join(db.passages).join(db.sources))
+                .join(db.sources)
                 .where(db.evidence.c.claim_id == finding["id"]),
             )
-        return {
-            **dict(entity),
-            "claims": findings,
-            "identity_decisions": rows(
-                conn,
-                select(db.identity_decisions).where(
-                    db.identity_decisions.c.company_id == company_id
-                ),
-            ),
-        }
+            for evidence in finding["evidence"]:
+                segments = {s["id"]: s for s in evidence.pop("content")["segments"]}
+                evidence["segments"] = [
+                    segments[x["segment_id"]] for x in evidence["locators"]
+                ]
+        return {**dict(entity), "claims": findings}
 
 
 @app.get("/api/runs")
@@ -78,21 +75,53 @@ def runs():
         )
 
 
-@app.get("/api/sources/{source_id}/artifact")
-def artifact(source_id: str):
+@app.get("/api/sources")
+def sources():
+    with db.engine.connect() as conn:
+        return rows(
+            conn,
+            select(
+                db.sources.c.id,
+                db.sources.c.title,
+                db.sources.c.external_id,
+                db.sources.c.provider,
+                db.sources.c.published_at,
+                db.sources.c.url,
+            ),
+        )
+
+
+def get_source(source_id):
     with db.engine.connect() as conn:
         source = (
-            conn.execute(select(db.sources).where(db.sources.c.id == source_id))
+            conn.execute(select(db.sources).where(db.sources.c.id == str(source_id)))
             .mappings()
             .first()
         )
     if not source:
         raise HTTPException(404, "Source not found")
-    path = settings.artifact_dir / source["artifact_name"]
-    if not path.exists():
-        raise HTTPException(404, "Artifact missing")
-    import hashlib
+    return dict(source)
 
-    if hashlib.sha256(path.read_bytes()).hexdigest() != source["sha256"]:
+
+@app.get("/api/sources/{source_id}")
+def source(source_id: UUID):
+    return get_source(source_id)
+
+
+@app.get("/api/sources/{source_id}/artifact")
+def artifact(source_id: UUID):
+    source = get_source(source_id)
+    if not source["raw_artifact"]:
+        raise HTTPException(404, "Raw artifact unavailable")
+    try:
+        data = read_bytes(source["raw_artifact"])
+    except FileNotFoundError:
+        raise HTTPException(404, "Artifact missing")
+    except ValueError:
         raise HTTPException(409, "Artifact integrity check failed")
-    return FileResponse(path, media_type="application/json", filename=path.name)
+    media = (
+        "application/xml"
+        if source["raw_artifact"]["name"].endswith(".ttml")
+        else "application/json"
+    )
+    return Response(data, media_type=media)

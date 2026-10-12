@@ -1,18 +1,27 @@
 import argparse
 import json
-from pathlib import Path
-from .contracts import Bundle
-from .service import import_bundle
 
-parser = argparse.ArgumentParser()
-parser.add_argument("command", choices=["import-reference"])
-parser.add_argument("--file", type=Path, default=Path("fixtures/felins-reference.json"))
+from .pipeline import process
+
+parser = argparse.ArgumentParser(
+    description="Process a complete real podcast transcript"
+)
+parser.add_argument("transcript")
+parser.add_argument("--metadata", required=True)
+parser.add_argument("--episode-id", required=True)
+parser.add_argument("--resume")
+parser.add_argument("--max-calls", type=int, default=30)
 parser.add_argument("--no-trace", action="store_true")
 args = parser.parse_args()
 print(
     json.dumps(
-        import_bundle(
-            Bundle.model_validate_json(args.file.read_text()), tracing=not args.no_trace
+        process(
+            args.transcript,
+            args.metadata,
+            args.episode_id,
+            resume=args.resume,
+            max_calls=args.max_calls,
+            tracing=not args.no_trace,
         ),
         indent=2,
     )

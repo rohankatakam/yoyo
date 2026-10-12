@@ -1,0 +1,13 @@
+export type Segment = { id: string; start: number | null; end: number | null; text: string; speaker: string | null };
+export type Evidence = { id: string; quote: string; role: string; speaker_label: string | null; source_id: string; title: string; segments: Segment[] };
+export type Claim = { id: string; text: string; status: string; evidence: Evidence[];
+  extraction: Record<string, unknown>; annotation: { time_class: string; rationale: string } | null };
+export type Company = { id: string; name: string; sector_id: string | null; subsector_id: string | null;
+  description: string | null; domain: string | null; linkedin_url: string | null;
+  ownership_status: string | null; funding_stage: string | null; capabilities: string[] | null;
+  end_markets: string[] | null; headquarters_country_codes: string[] | null;
+  operating_country_codes: string[] | null; operating_region_codes: string[] | null;
+  industry_codes: unknown; financial_observations: unknown; identity: unknown; field_evidence: unknown; claims?: Claim[] };
+export type Source = { id: string; title: string; external_id: string; provider: string };
+export type Run = { id: string; status: string; created_at: string; trace_url: string | null; error: string | null;
+  input: { model?: string; mode?: string }; progress: { operations?: Record<string, unknown> }; result: unknown };

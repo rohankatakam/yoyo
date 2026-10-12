@@ -1,72 +1,58 @@
 # Yoyo
 
-Local company evidence ledger. First milestone: one archived episode excerpt → validated findings → Postgres → React evidence view, with pgAdmin and LangSmith.
+Local company intelligence ledger: Apple TTML/JSON → normalization → OpenAI extraction → exact evidence checks → classification → Postgres → React.
 
-## Run
-
-Prerequisites: Docker Desktop, uv, Node.js and pnpm.
+## Start
 
 ```sh
-cp .env.example .env  # only if .env does not exist
-# Set LANGSMITH_API_KEY in .env; never commit it.
+# Create .env from .env.example only if it does not already exist.
+# Set OPENAI_API_KEY, MODEL and optionally LANGSMITH_API_KEY.
 docker compose up -d --wait
 uv sync
 uv run alembic upgrade head
-uv run python -m yoyo import-reference
 uv run uvicorn yoyo.api:app --host 127.0.0.1 --port 8000
-```
-
-In another terminal:
-
-```sh
-cd web
-pnpm install --frozen-lockfile
-pnpm dev
+# Separate terminal:
+pnpm --dir web install --frozen-lockfile
+pnpm --dir web dev
 ```
 
 - Dataset: http://localhost:5173
-- Database GUI: http://localhost:5050 (preconfigured “Yoyo local”; database password `yoyo_local`)
-- API documentation: http://localhost:8000/docs
-- Traces: https://smith.langchain.com → project `yoyo-local`, or the run's direct trace link.
+- pgAdmin: http://localhost:5050 → Yoyo local → Databases → yoyo → Schemas → public → Tables. Refresh the Tables node after migration. The six application tables sit alongside Alembic's version table. Local database password: `yoyo_local`.
+- API: http://localhost:8000/docs
+- Traces: https://smith.langchain.com → `yoyo-local`, or open a run's trace link in the dataset viewer.
 
-All local service ports bind to loopback. The development database credentials are local-only. LangSmith receives episode IDs, run metadata and counts; full transcripts and credentials are not trace inputs. LangSmith is hosted; the app, database and source files run locally.
-
-## Verify
+## Process a real transcript
 
 ```sh
-uv run pytest
-pnpm --dir web build
-uv run alembic check
-uv run python -m yoyo import-reference
+uv run python -m yoyo /path/transcript.ttml \
+  --metadata /path/metadata.json --episode-id APPLE_EPISODE_ID --max-calls 30
 ```
 
-The second import must report zero research-record deltas. Import attempts remain in run history. Tests isolate their data in temporary Postgres schemas. Restart the API and database, reopen the company and source JSON, and check stable IDs and evidence. Use `docker compose stop` to stop services without deleting data; avoid `down -v` unless intentionally deleting the ledger.
+JSON uses Apple `segments[{start,end,text,speaker,words}]`, in seconds. Metadata includes episode ID, title, durationSeconds, releaseDate and itunesUrl when known. Raw originals are copied into ignored, hash-addressed `artifacts/`; nothing depends on a committed dataset. MODEL is a configured OpenAI model ID, not a provider-prefixed string.
 
-## Evidence and identity limits
+There are no recorded model fixtures, default episodes, seed commands or canned research results. Unit tests construct small adversarial inputs solely to exercise validation. Previously imported reference records remain explicitly tagged `legacy_reference` and retain their provenance.
 
-The tracked fixture contains two short, verbatim passages from an existing Apple transcript archive (episode 1000793292726), with original segment indices, timestamps, speaker labels and parent artifact hash. These are assistant-selected reference findings pending human review; audio and external identity were not independently checked. This is not an extraction evaluation or an autonomous research run. Episode title is a descriptive reference label. Canonical episode URL is unknown; the provider episode ID is retained.
+## Recovery and limits
 
-Names are scoped to the episode until actual identity resolution is implemented. The CEO statement remains an attributed relationship; neither it nor the reported age becomes an independently verified fact. Speaker labels are preserved without guessing real identities. Domain, LinkedIn, sector, ownership, funding stage and valuation are unknown. No enrichment is inferred. Future financial observations must retain amount, currency, date, basis and evidence, with valuation, funding and acquisition price as distinct types.
+Completed identical input/model/prompt runs reuse saved results without another model call. Add `--resume RUN_ID` to continue a failed run with identical arguments. Completed operations reuse their saved real responses. Submitted operations with unknown outcomes stop for inspection instead of silently sending again; no automatic job reconciliation is claimed.
 
-## Architecture
+Each operation saves input, raw response, response ID, usage and parsed output. A call-count budget plus per-response output-token cap bounds execution. Actual dollar cost stays unknown until pricing/accounting is added. The OpenAI client disables automatic retries. A session advisory lock prevents concurrent identical runs; a transaction lock protects ledger writes. Commit and run results share one transaction.
 
-`yoyo/contracts.py` defines typed input. `service.py` owns validation, artifact hashing and transactional commit. CLI calls the service; the read-only API exposes saved records. Later agent tools and workers will call this same service boundary.
+Exact source text, speaker labels and numbers are checked. Company names can receive an exact quoted context segment; uniquely matching quote locators can be corrected without editing quote text. These checks do not prove entailment, completeness, true identity or factual accuracy. All model claims need review. Some supported paraphrases will be conservatively rejected.
 
-Postgres holds research and run history. Hash-addressed JSON artifacts are immutable and checked before serving. Proposals, claims, evidence and identity decisions are separate tables. Claim IDs do not include source versions, so repeated evidence can attach to an existing assertion. Exact replay uses deterministic keys, Postgres constraints and an advisory write lock. Cross-episode resolution and semantic claim deduplication are deliberately deferred.
+Names are episode-scoped unresolved mentions. External identity resolution, semantic deduplication, profile enrichment, provider discovery/retrieval, a LangGraph agent and the human-reviewed 10–20 episode benchmark are subsequent milestones. Optional profile fields remain null. Changing extraction prompts may produce separate claims; exact completed-run replay is deduplicated.
 
-A research transaction atomically commits both findings and its completed run result. Failure rolls back research records and marks the run failed. An interrupted process may leave a running attempt and an orphan immutable artifact; rerunning is safe. Automatic reconciliation/checkpoints/provider-job recovery belong to the worker milestone. Each attempt gets a new run ID. Counts come from committed database writes; tracing failures never roll back those writes.
+LangSmith is optional operational diagnostics, not the evidence store. Traces contain IDs, artifact references, usage and commit counts; raw model text and complete transcripts stay in local artifacts (and are submitted to the configured model provider for processing). A trace failure does not invalidate committed research.
 
-LangSmith traces are operational diagnostics; Postgres is the audit source of truth. No model or paid research-provider calls occur in this milestone. Trace hosting charges, if any, are outside the zero research-call cost.
+## Checks
 
-## Next gates
+```sh
+uv run pytest -q
+uv run alembic check
+uv run ruff check --isolated --select E4,E7,E9,F yoyo tests migrations
+pnpm --dir web build
+```
 
-1. Human review of the reference evidence and identity policy.
-2. Fixed-episode extraction into proposals; same validation/commit boundary.
-3. Entity resolution and supported enrichment.
-4. 10–20 episode evaluation with predeclared thresholds.
-5. Provider retrieval/jobs, budget accounting and interruption recovery.
-6. `create_agent`, Postgres checkpoints and bounded live discovery.
+Tests use isolated PostgreSQL schemas. Source, test, prompt and migration files stay under 250 lines; generated dependency lockfiles are exempt.
 
-No agent/checkpointer is created in this first milestone: there is no model loop to resume yet.
-
-See [the milestone verification record](docs/verification.md) for executed checks and their limits.
+See [schema](docs/schema.md), [reused code](docs/reuse.md), and [verification](docs/verification.md).
