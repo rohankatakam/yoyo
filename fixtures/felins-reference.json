@@ -1,0 +1,53 @@
+{
+  "origin": "Local research archive; fixed reference selection, no discovery query in this run.",
+  "source": {
+    "episode_id": "1000793292726",
+    "title": "Felins \u2014 Andrew Barrieau interview (reference excerpt)",
+    "url": null,
+    "parent_sha256": "6e4a3bc50decea57afa80865ff5d7cc92f15b17172f06a8325abf7e0ca39813c",
+    "provenance": {
+      "provider": "apple",
+      "retrieved_at": "2026-10-11T08:12:57.485368+00:00",
+      "selection": "Original segment indices 4 and 16; complete episode is not included.",
+      "review": "Assistant-selected reference; pending human review. Audio not checked.",
+      "origin_path": "/Users/rohan/Documents/liver/research/podcast_tree_audit_2026_10_11/transcripts/1000793292726/transcript.json",
+      "speaker_identity": "Unknown; original transcript labels retained.",
+      "source_url_status": "Unknown; canonical episode URL has not been verified."
+    },
+    "segments": [
+      {
+        "index": 4,
+        "start": 42.18,
+        "end": 44.9,
+        "speaker": "SPEAKER_1",
+        "text": "Andrew Barrieau, CEO of Felins."
+      },
+      {
+        "index": 16,
+        "start": 89.22,
+        "end": 92.0,
+        "speaker": "SPEAKER_2",
+        "text": "So Felins has been in business for 105 years."
+      }
+    ]
+  },
+  "findings": [
+    {
+      "company": "Felins",
+      "person": "Andrew Barrieau",
+      "predicate": "has_ceo",
+      "statement": "Andrew Barrieau is CEO of Felins, according to the episode introduction.",
+      "segment_index": 4,
+      "quote": "Andrew Barrieau, CEO of Felins.",
+      "speaker_label": "SPEAKER_1"
+    },
+    {
+      "company": "Felins",
+      "predicate": "reported_age",
+      "statement": "The speaker says Felins has been in business for 105 years.",
+      "segment_index": 16,
+      "quote": "So Felins has been in business for 105 years.",
+      "speaker_label": "SPEAKER_2"
+    }
+  ]
+}
