@@ -1,0 +1,27 @@
+{
+  "dataset_version": "identity-v1",
+  "purpose": "development regression set; not held-out accuracy",
+  "case_count": 24,
+  "real_episode_cases": 12,
+  "authored_controls": 12,
+  "ordering": "Run all cases in file order against an empty isolated ledger; MATCH depends on prior creation.",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "previous_code_commit": "79703a7",
+  "new_code_commit": "b98bd0d",
+  "previous_experiment": "matching-v3-lexical",
+  "new_experiment": "packets-with-notes-final-lexical",
+  "expected_agreement": {
+    "previous": 17,
+    "new_with_metadata": 17
+  },
+  "labels": "Provisional labels preserved unchanged; Crispy Greens is a brand-scope policy label requiring review.",
+  "limitations": [
+    "Live Exa results may change; frozen inputs do not guarantee identical live outcomes.",
+    "Provider responses are not bundled; prior outcomes are comparison records, not runtime fixtures.",
+    "This set was used during development and is not an unbiased benchmark."
+  ],
+  "sha256": {
+    "cases.jsonl": "8b2089746b65aaaa5a073d4331fd1660bb4de2babfcd2a346adf0fbad4367578",
+    "baseline.jsonl": "d7ec8e5879583d13c4b86dbf69f5f43480e2475c1f0651099a13f5b8d5306e63"
+  }
+}

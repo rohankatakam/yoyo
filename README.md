@@ -60,3 +60,5 @@ Tests use isolated PostgreSQL schemas. Source, test, prompt and migration files 
 Run the real-provider comparison with `uv run python -m evaluation.compare evaluation/cases.jsonl --label YOUR_FRESH_LABEL`, then `uv run python -m evaluation.report YOUR_FRESH_LABEL`. Each method starts in its own empty database schema and shares a durable cache of real provider responses. See [matching results](docs/matching-comparison.md) and [evidence-packet evaluation](docs/evidence-packets-evaluation.md).
 
 See [schema](docs/schema.md), [reused code](docs/reuse.md), and [verification](docs/verification.md).
+
+Frozen [24-case identity regression set](evaluation/identity_v1/README.md) includes exact inputs, provisional labels and previous/new outcomes. See [the next milestone](docs/next-milestone.md) for the sequence aligned with the Notion architecture and evaluation plan.
