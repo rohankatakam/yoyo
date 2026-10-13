@@ -1,0 +1,51 @@
+[
+  {
+    "episode_id": "1000513559388",
+    "title": "Chatting With Canadian Food Manufacturing Company Koop Foods Founder Jeff Koop",
+    "url": "https://podcasts.apple.com/us/podcast/chatting-with-canadian-food-manufacturing-company-koop/id1550749561?i=1000513559388&uo=4",
+    "reason": "Company founder; older episode, possible missing transcript",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000726611489",
+    "title": "Mini Series: 3 Things Food Founders Struggle with in Co-Manufacturing. Part 2: Protecting Your Product Integrity",
+    "url": "https://podcasts.apple.com/us/podcast/mini-series-3-things-food-founders-struggle-with-in-co/id1782240489?i=1000726611489&uo=4",
+    "reason": "Co-manufacturing and hypothetical counterparties",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000725216879",
+    "title": "Mini Series: 3 Things Food Founders Struggle with in Co-Manufacturing. Part 1: Cracking the MOQ Code",
+    "url": "https://podcasts.apple.com/us/podcast/mini-series-3-things-food-founders-struggle-with-in-co/id1782247063?i=1000725216879&uo=4",
+    "reason": "Generic industry advice; negative control for company extraction",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000769142283",
+    "title": "The Future of Automation and AI with Honeywell CEO Vimal Kapur",
+    "url": "https://podcasts.apple.com/us/podcast/the-future-of-automation-and-ai-with/id730188152?i=1000769142283&uo=4",
+    "reason": "Repeat Honeywell company across a second episode",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000533024487",
+    "title": "An Interview With Edgewater Healthcare Services CEO- Johnson Chin",
+    "url": "https://podcasts.apple.com/us/podcast/an-interview-with-edgewater-healthcare-services/id1582708128?i=1000533024487&uo=4",
+    "reason": "Short interview, sparse identifiers; live agent smoke test",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000778062491",
+    "title": "LEMON DROP | Making Medicare Simple with Chapter CEO Cobi Blumenfeld-Gantz",
+    "url": "https://podcasts.apple.com/us/podcast/lemon-drop-making-medicare-simple-with-chapter-ceo/id1736344886?i=1000778062491&uo=4",
+    "reason": "Company interview plus commercial promotion",
+    "status": "queued_not_reviewed"
+  },
+  {
+    "episode_id": "1000584557061",
+    "title": "Longwoods Breakfast - Dr. Michael Gardam, Health PEI, CEO. Stranger in a Strange Land",
+    "url": "https://podcasts.apple.com/us/podcast/longwoods-breakfast-dr-michael-gardam-health-pei-ceo/id1514435728?i=1000584557061&uo=4",
+    "reason": "Public healthcare organization and employment changes",
+    "status": "queued_not_reviewed"
+  }
+]

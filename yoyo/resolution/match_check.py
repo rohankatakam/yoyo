@@ -13,6 +13,10 @@ class IdentityCheck(Strict):
 
 PROMPT = """Compare only this target mention and one proposed company. Determine whether
 these are the SAME business, DISTINCT businesses, or INSUFFICIENT evidence.
+The target is EXACTLY target_name. Other organizations in the passage are context,
+not alternate targets. If a passage says A sells to B and target_name is B, compare B
+with the candidate. Do not compare A with B. The episode guest/title is not the target.
+Identify the words referring to the target before explaining your decision.
 Shared names, a commercial relationship, related industries, or an unsupported URL do
 not establish identity. Compare activity, geography, corporate scope, aliases and
 source evidence. Treat differing business descriptions as compatible when one is a
@@ -33,7 +37,7 @@ def check_match(mention, candidate, research):
     }
     check = research.ask(
         PROMPT,
-        {"mention": mention.model_dump(), "candidate": candidate},
+        {"target_name": mention.name, "mention": mention.model_dump(), "candidate": candidate},
         IdentityCheck,
         schema=schema,
     )

@@ -25,7 +25,7 @@ pnpm --dir web dev
 
 ```sh
 uv run python -m yoyo /path/transcript.ttml \
-  --metadata /path/metadata.json --episode-id APPLE_EPISODE_ID --max-calls 30
+  --metadata /path/metadata.json --episode-id APPLE_EPISODE_ID --max-calls 160
 ```
 
 JSON uses Apple `segments[{start,end,text,speaker,words}]`, in seconds. Metadata includes episode ID, title, durationSeconds, releaseDate and itunesUrl when known. Raw originals are copied into ignored, hash-addressed `artifacts/`; nothing depends on a committed dataset. MODEL is a configured OpenAI model ID, not a provider-prefixed string.
@@ -36,13 +36,13 @@ There are no recorded model fixtures, default episodes, seed commands or canned 
 
 Completed identical input/model/prompt runs reuse saved results without another model call. Add `--resume RUN_ID` to continue a failed run with identical arguments. Completed operations reuse their saved real responses. Submitted operations with unknown outcomes stop for inspection instead of silently sending again; no automatic job reconciliation is claimed.
 
-Each operation saves input, raw response, response ID, usage and parsed output. The extraction/classification call budget and per-response token caps are enforced. Resolution and entailment have finite per-input workflows but do not yet share the global call budget. Actual dollar cost stays unknown until pricing/accounting is added. The OpenAI client disables automatic retries. A session advisory lock prevents concurrent identical runs; a transaction lock protects ledger writes. Claims and run results share one transaction; researched companies commit sequentially before the next mention.
+Each operation saves input, raw response, response ID, usage and parsed output. One persisted external-call allowance covers extraction, classification, entailment, resolution, Exa/embeddings, Apple catalog and planner calls. The deadline blocks new dispatches; completed cached work is reusable. Per-response token limits also apply. Provider-reported dollars and model tokens are retained, but model dollar cost and a hard USD cap remain unimplemented. The OpenAI client disables automatic retries. A session advisory lock prevents concurrent identical runs; a transaction lock protects ledger writes. Claims and run results share one transaction; researched companies commit sequentially before the next mention.
 
 Exact source text, speaker labels and numbers are checked. Company names can receive an exact quoted context segment; uniquely matching quote locators can be corrected without editing quote text. These checks do not prove entailment, completeness, true identity or factual accuracy. Before identity resolution, an independent model checks claim entailment against original transcript passages, with one bounded context expansion when insufficient. Only SUPPORTED claims proceed; others remain in run artifacts. This checks faithful attribution, not real-world truth, and can reject valid paraphrases. All model claims need review. Some supported paraphrases will be conservatively rejected.
 
 Company mentions must pass lookup → resolve → commit. The default `--matching lexical` uses identifier/name candidates and an LLM decision; `--matching hybrid` adds cosine candidates and remains experimental. Only NEW_COMPANY triggers synchronous Exa research, followed by identity rechecking before commit. Identity inputs keep exact transcript segments separate from episode descriptions/show notes and candidate links. Every proposed match receives a separate pair check. A domain must pass a corporate-scope check; rejected regional domains remain observations. Unknown fields remain null. Sectors/products/brands are excluded; uncertain identities and affected claims are withheld in run artifacts. Subsidiaries remain distinct companies. People remain episode-scoped.
 
-Both retrievers currently scan the small local ledger; indexed retrieval, asynchronous enrichment, discovery agents and the human-reviewed 10–20 episode benchmark remain future work. Changing extraction prompts may produce separate claims; exact completed-run replay is deduplicated.
+Both retrievers currently scan the small local ledger; indexed retrieval, asynchronous enrichment and the human-reviewed 10–20 episode benchmark remain future work. A bounded discovery agent is available below. Changing extraction prompts may produce separate claims; exact completed-run replay is deduplicated.
 
 LangSmith is optional operational diagnostics, not the evidence store. Traces contain IDs, artifact references, usage and commit counts; raw model text and complete transcripts stay in local artifacts (and are submitted to the configured model provider for processing). A trace failure does not invalidate committed research.
 
@@ -62,3 +62,22 @@ Run the real-provider comparison with `uv run python -m evaluation.compare evalu
 See [schema](docs/schema.md), [reused code](docs/reuse.md), and [verification](docs/verification.md).
 
 Frozen [24-case identity regression set](evaluation/identity_v1/README.md) includes exact inputs, provisional labels and previous/new outcomes. See [the next milestone](docs/next-milestone.md) for the sequence aligned with the Notion architecture and evaluation plan.
+
+## Ingest an Apple episode URL
+
+```sh
+uv run python -m yoyo.ingest 'https://podcasts.apple.com/us/podcast/SHOW/idSHOW_ID?i=EPISODE_ID' --max-calls 160 --seconds 1800
+```
+
+Reuse the identical command to resume/replay. Metadata and transcripts are saved before extraction. Existing Apple TTML is used first; missing transcripts return `waiting`, without audio transcription. If a transcript is later downloaded in Apple Podcasts, rerun to check the local cache. Apple catalog authorization is read from the local Podcasts cache with the user's explicit approval; credentials go only to Apple's catalog host and never enter artifacts, traces or Git. The US storefront is a catalog setting, not a US-only company filter.
+
+## Bounded discovery
+
+```sh
+uv run python -m yoyo.agent 'Find company evidence in industrial automation' --max-episodes 1 --max-turns 12 --max-calls 180 --seconds 2400
+uv run python -m yoyo.agent --resume RUN_ID
+```
+
+Optional `--after YYYY-MM-DD --before YYYY-MM-DD` filters episode publication dates. Each new invocation creates a run/thread; resume preserves its original settings and budget. Tools read coverage, save justified searches, and call the same sequential ingestion pipeline. Checkpoints live in PostgreSQL's `agent_checkpoints` schema. View coverage/history at `http://localhost:8000/api/coverage`. Calls/time/turns/episodes are bounded; a hard dollar cap is not yet implemented.
+
+See [implementation and live results](docs/url-ingestion-milestone.md), the [three-episode review set](evaluation/episodes_v1/README.md), and the [targeted identity regression](evaluation/target_fix_v1/README.md).

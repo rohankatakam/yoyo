@@ -1,0 +1,47 @@
+[
+  {
+    "episode_id": "1000639113708",
+    "niche": "food manufacturing",
+    "title": "From Muffin Tins to Major Manufacturing: How Blender Bites Started a New Food Category",
+    "url": "https://podcasts.apple.com/us/podcast/from-muffin-tins-to-major-manufacturing-how-blender/id1509347691?i=1000639113708&uo=4",
+    "run_id": "a265543e-c173-4538-a580-64914af93a79",
+    "source_id": "bdf70f41-760c-51fe-baab-642dc0a5c650",
+    "source_version_hash": "f341e248b9fe474923fae754fdc1f7a2f6f3fe39b5e44db00fe2b93c0f987be5",
+    "transcript_artifact": {
+      "name": "102d814877e5be95a6f90706d6aef99ea4997a5690e50145530e8640616e5059.ttml",
+      "sha256": "102d814877e5be95a6f90706d6aef99ea4997a5690e50145530e8640616e5059"
+    },
+    "review_status": "pending_human_review",
+    "review_file": "1000639113708.jsonl"
+  },
+  {
+    "episode_id": "1000774902823",
+    "niche": "industrial automation",
+    "title": "The Future of Industrial AI with Honeywell Technologies Chairman and CEO Vimal Kapur",
+    "url": "https://podcasts.apple.com/us/podcast/the-future-of-industrial-ai-with/id1373320104?i=1000774902823&uo=4",
+    "run_id": "05887396-195d-4f6d-9e6d-b432fd6eef2e",
+    "source_id": "541d85f5-da97-5f68-87f9-3974405fa139",
+    "source_version_hash": "f0dae4df61918fce46925f320795a517158d82c36b5b3dbb12a58761580145c1",
+    "transcript_artifact": {
+      "name": "2c9f983c21e5aaaa88be7096c9c2e87680008cbd772c0598a6ef74f23f762d3e.ttml",
+      "sha256": "2c9f983c21e5aaaa88be7096c9c2e87680008cbd772c0598a6ef74f23f762d3e"
+    },
+    "review_status": "pending_human_review",
+    "review_file": "1000774902823.jsonl"
+  },
+  {
+    "episode_id": "1000752166769",
+    "niche": "healthcare services",
+    "title": "Jason Glover, CEO of Memorial Hermann\u2013Texas Medical Center Adult Services",
+    "url": "https://podcasts.apple.com/us/podcast/jason-glover-ceo-of-memorial-hermann-texas-medical/id1452376188?i=1000752166769&uo=4",
+    "run_id": "a876c8a0-575b-4f57-9f47-3423acee3879",
+    "source_id": "3ec19efd-bc7c-5947-8d39-16ffeeed845f",
+    "source_version_hash": "2d8bfa885cd31397c0f1be456764de9cec69f9e42753358b79fb66ad7038f75d",
+    "transcript_artifact": {
+      "name": "59026689937ed764fbbb49027da8e9b631c2af647b6a718117de3951bea30f9e.ttml",
+      "sha256": "59026689937ed764fbbb49027da8e9b631c2af647b6a718117de3951bea30f9e"
+    },
+    "review_status": "pending_human_review",
+    "review_file": "1000752166769.jsonl"
+  }
+]

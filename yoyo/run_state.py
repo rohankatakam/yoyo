@@ -9,7 +9,7 @@ from .artifacts import digest
 
 class State:
     def __init__(self, inputs, resume=None):
-        self.lock = db.engine.connect()
+        self.lock = db.engine.connect().execution_options(isolation_level="AUTOCOMMIT")
         lock_key = int(digest(inputs)[:15], 16)
         if not self.lock.scalar(
             text("SELECT pg_try_advisory_lock(:key)"), {"key": lock_key}

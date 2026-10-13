@@ -125,3 +125,10 @@ def artifact(source_id: UUID):
         else "application/json"
     )
     return Response(data, media_type=media)
+
+
+@app.get("/api/coverage")
+def coverage():
+    from .discovery import coverage_snapshot
+
+    return coverage_snapshot()

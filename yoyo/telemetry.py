@@ -7,7 +7,7 @@ from .config import settings
 
 
 class Trace:
-    def __init__(self, run_id, inputs, enabled=True):
+    def __init__(self, run_id, inputs, enabled=True, name="process_episode"):
         self.id = str(uuid4())
         self.root = None
         self.status = "disabled"
@@ -19,7 +19,7 @@ class Trace:
 
             self.root = RunTree(
                 id=self.id,
-                name="process_episode",
+                name=name,
                 run_type="chain",
                 project_name=settings.langsmith_project,
                 client=Client(api_key=settings.langsmith_api_key),

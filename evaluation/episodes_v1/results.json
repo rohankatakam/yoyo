@@ -1,0 +1,50 @@
+[
+  {
+    "episode_id": "1000639113708",
+    "niche": "food manufacturing",
+    "structurally_accepted": 5,
+    "entailed": 4,
+    "committed": 3,
+    "delta": {
+      "companies": 6,
+      "people": 0,
+      "sources": 60,
+      "claims": 3,
+      "evidence": 9
+    },
+    "external_calls": 67,
+    "trace_url": "https://smith.langchain.com/o/5df0febc-a638-5587-b034-94cf8f8de68c/projects/p/eaa468f4-bc8f-4277-ad07-900efef44439/trace/584193a2-f943-4a03-a9d3-348fa0dda23c/run/584193a2-f943-4a03-a9d3-348fa0dda23c?start_time=2026-10-13T01%3A04%3A23.281775%2B00%3A00"
+  },
+  {
+    "episode_id": "1000774902823",
+    "niche": "industrial automation",
+    "structurally_accepted": 5,
+    "entailed": 4,
+    "committed": 3,
+    "delta": {
+      "companies": 1,
+      "people": 0,
+      "sources": 13,
+      "claims": 3,
+      "evidence": 6
+    },
+    "external_calls": 21,
+    "trace_url": "https://smith.langchain.com/o/5df0febc-a638-5587-b034-94cf8f8de68c/projects/p/eaa468f4-bc8f-4277-ad07-900efef44439/trace/b155c4ae-9140-4673-bead-7f316febe4c0/run/b155c4ae-9140-4673-bead-7f316febe4c0?start_time=2026-10-13T01%3A06%3A57.853575%2B00%3A00"
+  },
+  {
+    "episode_id": "1000752166769",
+    "niche": "healthcare services",
+    "structurally_accepted": 18,
+    "entailed": 18,
+    "committed": 13,
+    "delta": {
+      "companies": 1,
+      "people": 2,
+      "sources": 13,
+      "claims": 13,
+      "evidence": 31
+    },
+    "external_calls": 40,
+    "trace_url": "https://smith.langchain.com/o/5df0febc-a638-5587-b034-94cf8f8de68c/projects/p/eaa468f4-bc8f-4277-ad07-900efef44439/trace/42bcebea-2f51-476f-b725-e019c74e36ea/run/42bcebea-2f51-476f-b725-e019c74e36ea?start_time=2026-10-13T01%3A08%3A10.444818%2B00%3A00"
+  }
+]

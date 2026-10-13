@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from ..artifacts import digest, store_json, read_json
 from ..config import settings
+from ..budget import reserve, finish, active
 
 
 class Cache:
@@ -26,6 +27,7 @@ class Cache:
                 )
             hit = True
         else:
+            reserve(key, kind)
             record = {
                 "kind": kind,
                 "request": store_json(payload),
@@ -48,6 +50,9 @@ class Cache:
             self.write(path, record)
             hit = False
         result = read_json(record["response"])
+        budget = active.get()
+        if budget and key in budget.record["calls"]:
+            finish(key, result)
         self.events.append(
             {
                 "key": key,

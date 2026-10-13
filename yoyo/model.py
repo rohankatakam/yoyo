@@ -7,6 +7,7 @@ from openai.lib._pydantic import to_strict_json_schema
 
 from .artifacts import digest, read_json, store_json
 from .config import settings
+from .budget import reserve, finish, timeout, BudgetExhausted
 
 
 def call_model(state, key, prompt, payload, output_type, trace):
@@ -23,7 +24,9 @@ def call_model(state, key, prompt, payload, output_type, trace):
             )
         return output_type.model_validate(read_json(operation["parsed"]))
     if len(state.progress["operations"]) >= state.inputs["max_calls"]:
-        raise RuntimeError("Model call budget exhausted")
+        raise BudgetExhausted("Model call budget exhausted")
+    budget_key = state.id + ":" + key
+    reserve(budget_key, "llm-" + key)
     operation = {
         "status": "submitted",
         "signature": signature,
@@ -31,7 +34,9 @@ def call_model(state, key, prompt, payload, output_type, trace):
     }
     state.progress["operations"][key] = operation
     state.save()
-    client = OpenAI(api_key=settings.openai_api_key, max_retries=0, timeout=180)
+    client = OpenAI(
+        api_key=settings.openai_api_key, max_retries=0, timeout=timeout(180)
+    )
     try:
         with trace.span(
             key, {"model": settings.model, "input": operation["input"]}, "llm"
@@ -57,6 +62,7 @@ def call_model(state, key, prompt, payload, output_type, trace):
                 },
             )
             operation["raw"] = store_json(response.model_dump(mode="json"))
+            finish(budget_key, response.model_dump(mode="json"))
             operation["response_id"] = response.id
             operation["usage"] = response.usage.model_dump() if response.usage else {}
             state.save()

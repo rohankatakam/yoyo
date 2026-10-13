@@ -17,7 +17,7 @@ class Notes(HTMLParser):
         if tag in {"p", "br", "li", "div"}:
             self.parts.append("\n")
         if tag == "a":
-            self.links.extend(v for k, v in attrs if k == "href" and v)
+            self.parts.extend(f" [{v}] " for k, v in attrs if k == "href" and v and not self.hidden)
 
     def handle_endtag(self, tag):
         if tag in {"script", "style"}:
@@ -36,15 +36,13 @@ def episode_context(source, name):
     parser = Notes()
     parser.feed(raw)
     paragraphs = [p.strip() for p in "".join(parser.parts).splitlines() if p.strip()]
-    # Keep short notes intact; select matching paragraphs in long notes.
-    terms = set(re.findall(r"[a-z0-9]+", name.lower())) - {"inc", "the", "company"}
-    selected = (
-        paragraphs
-        if len("\n".join(paragraphs)) <= 6000
-        else [p for p in paragraphs if terms & set(re.findall(r"[a-z0-9]+", p.lower()))]
-    )
-    text = "\n".join(selected)[:6000]
-    links = list(dict.fromkeys(parser.links + re.findall(r"https?://[^\s<>]+", text)))
+    # Match a distinctive target token, even in short notes. Never inherit all links.
+    terms = set(re.findall(r"[a-z0-9]+", name.lower())) - {
+        "inc", "the", "company", "corporation", "llc", "ltd", "food", "foods", "group"
+    }
+    selected = [p for p in paragraphs if terms & set(re.findall(r"[a-z0-9]+", p.lower()))]
+    text = "\n".join(selected)[:2400]
+    links = list(dict.fromkeys(re.findall(r"https?://[^\s<>\]]+", text)))
     retrieved = source.get("retrieved_at")
     return {
         "source_id": source["id"],

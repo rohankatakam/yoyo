@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .artifacts import digest, store_json
+from .budget import Budget, BudgetExhausted, active
 from .claim_models import Candidates, Classifications
 from .commit import commit_findings, counts
 from . import db
@@ -38,7 +39,7 @@ def process(
     episode_id,
     *,
     resume=None,
-    max_calls=30,
+    max_calls=160,
     tracing=True,
     matching="lexical",
 ):
@@ -60,7 +61,7 @@ def process(
         "source_id": source["id"],
         "model": settings.model,
         "max_calls": max_calls,
-        "pipeline": "claims-v5-evidence-packets",
+        "pipeline": "claims-v6-target-notes-shared-budget",
         "matching": matching,
         "prompt_hash": digest([EXTRACT, ANNOTATE, VERIFY_PROMPT]),
     }
@@ -79,6 +80,13 @@ def process(
     trace = Trace(state.id, inputs, enabled=tracing)
     state.progress.setdefault("trace_attempt_ids", []).append(trace.id)
     state.save()
+    budget = active.get() or Budget(state, max_calls=max_calls)
+    if budget.state.id != state.id:
+        children = budget.state.progress.setdefault("child_run_ids", [])
+        if state.id not in children:
+            children.append(state.id)
+            budget.state.save()
+    budget_token = active.set(budget)
     accepted, rejected, annotations = {}, [], {}
     try:
         for index, batch in enumerate(chunks(transcript.segments)):
@@ -188,7 +196,7 @@ def process(
     except Exception as exc:
         trace.finish(error=str(exc))
         state.save(
-            status="failed",
+            status="budget_exhausted" if isinstance(exc, BudgetExhausted) else "failed",
             error=str(exc),
             finished_at=now(),
             trace_id=trace.id,
@@ -197,6 +205,7 @@ def process(
         )
         raise
     finally:
+        active.reset(budget_token)
         state.close()
 
 

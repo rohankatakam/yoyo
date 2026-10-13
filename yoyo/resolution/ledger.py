@@ -37,6 +37,7 @@ class Ledger:
                 .one()
             )
             identity = dict(row["identity"])
+            identity["last_seen_run_id"] = self.run_id
             identity["aliases"] = sorted(
                 set(identity.get("aliases", []) + [mention.name])
             )
@@ -58,6 +59,8 @@ class Ledger:
         ids = [stable("web-source", digest(page)) for page in pages]
         identity = {
             "status": "source_verified",
+            "created_run_id": self.run_id,
+            "last_seen_run_id": self.run_id,
             "observed_domains": record.get("observed_domains", []),
             "aliases": [mention.name],
             "citations": [

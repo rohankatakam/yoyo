@@ -4,6 +4,7 @@ from openai import OpenAI
 from openai.lib._pydantic import to_strict_json_schema
 from ..config import settings
 from .cache import Cache
+from ..budget import timeout
 
 
 class Research:
@@ -24,7 +25,7 @@ class Research:
         }
 
         def execute():
-            response = self.client.responses.create(
+            response = self.client.with_options(timeout=timeout(180)).responses.create(
                 model=settings.model,
                 temperature=0,
                 input=[
@@ -64,7 +65,7 @@ class Research:
                 "https://api.exa.ai/search",
                 json=request,
                 headers={"x-api-key": settings.exa_api_key},
-                timeout=90,
+                timeout=timeout(90),
             )
             response.raise_for_status()
             return response.json()

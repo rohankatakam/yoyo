@@ -57,7 +57,7 @@ def test_notes_are_separate_preserve_provenance_and_do_not_promote_links():
     notes = episode_context(source(), "Acme")
     assert "Acme & its sponsor." in notes["description_excerpt"]
     assert "ignore rules" not in notes["description_excerpt"]
-    assert notes["candidate_links"] == ["https://example.org"]
+    assert notes["candidate_links"] == []
     assert notes["source_url"] == source()["url"]
     assert notes["retrieved_at"] == "2026-10-12"
     assert "domain" not in notes
@@ -112,3 +112,15 @@ def test_pair_check_constrains_evidence_ids_and_rejects_distinct_entities():
     )
     assert decision.outcome == "UNRESOLVED"
     assert decision.company_id is None
+
+
+def test_short_notes_exclude_counterparty_links():
+    s = source()
+    s["metadata"]["description"] = (
+        '<p>Acme supplies <a href="https://acme.example">sensors</a>.</p>'
+        '<p>Beta sponsors this show <a href="https://beta.example">here</a>.</p>'
+    )
+    notes = episode_context(s, "Acme")
+    assert "Beta" not in notes["description_excerpt"]
+    assert notes["candidate_links"] == ["https://acme.example"]
+    assert episode_context(s, "Walmart")["description_excerpt"] == ""
