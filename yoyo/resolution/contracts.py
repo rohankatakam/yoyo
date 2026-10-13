@@ -7,6 +7,8 @@ class Mention(Strict):
     name: str
     context: str
     source_id: str
+    transcript_evidence: list[dict] = Field(default_factory=list)
+    episode_context: dict | None = None
     domain: str | None = None
     linkedin_url: str | None = None
 

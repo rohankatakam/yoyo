@@ -5,6 +5,7 @@ from .contracts import Mention
 from .gate import Gate
 from .ledger import Ledger
 from .providers import Research
+from .packets import episode_context, transcript_packet
 
 
 def resolve_findings(source, findings, annotations, state, trace, mode):
@@ -20,7 +21,11 @@ def resolve_findings(source, findings, annotations, state, trace, mode):
     resolved = {}
     for name, passages in contexts.items():
         mention = Mention(
-            name=name, context="\n".join(passages[:3]), source_id=source["id"]
+            name=name,
+            context="Target company mention: " + name,
+            source_id=source["id"],
+            transcript_evidence=transcript_packet(source, name, findings),
+            episode_context=episode_context(source, name),
         )
         key = digest(mention.model_dump())
         if key not in saved:

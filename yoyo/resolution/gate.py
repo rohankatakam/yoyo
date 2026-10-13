@@ -4,6 +4,7 @@ from .contracts import Decision, Mention, EntityType
 from .retrieve import retrieve
 from .prompts import RESOLVE, TYPE
 from .enrich import enrich
+from .match_check import check_match
 
 
 def decide(mention, candidates, research):
@@ -51,6 +52,13 @@ def decide(mention, candidates, research):
         raise ValueError("Resolver selected a company outside its candidate set")
     if not set(decision.evidence) <= allowed | {"mention"}:
         raise ValueError("Resolver cited evidence outside its input")
+    if decision.outcome == "MATCH":
+        candidate = next(
+            c for c in payload["candidates"] if c["id"] == decision.company_id
+        )
+        rejected = check_match(mention, candidate, research)
+        if rejected:
+            return rejected
     return decision
 
 
@@ -145,6 +153,8 @@ class Gate:
                     self.history.append(entry)
                     return entry
                 verified = Mention(
+                    transcript_evidence=mention.transcript_evidence,
+                    episode_context=mention.episode_context,
                     name=record["name"],
                     context=mention.context
                     + "\nVerified profile: "

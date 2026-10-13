@@ -1,6 +1,6 @@
 # Yoyo
 
-Local company intelligence ledger: Apple TTML/JSON → normalization → OpenAI extraction → exact evidence checks → classification → lookup/resolve → synchronous enrichment → Postgres → React.
+Local company intelligence ledger: Apple TTML/JSON → normalization → OpenAI extraction → exact evidence checks → classification → transcript entailment check → lookup/resolve → synchronous enrichment → Postgres → React.
 
 ## Start
 
@@ -36,11 +36,11 @@ There are no recorded model fixtures, default episodes, seed commands or canned 
 
 Completed identical input/model/prompt runs reuse saved results without another model call. Add `--resume RUN_ID` to continue a failed run with identical arguments. Completed operations reuse their saved real responses. Submitted operations with unknown outcomes stop for inspection instead of silently sending again; no automatic job reconciliation is claimed.
 
-Each operation saves input, raw response, response ID, usage and parsed output. The extraction/classification call budget and per-response token caps are enforced. Resolution has a finite per-mention workflow but does not yet share the global call budget. Actual dollar cost stays unknown until pricing/accounting is added. The OpenAI client disables automatic retries. A session advisory lock prevents concurrent identical runs; a transaction lock protects ledger writes. Claims and run results share one transaction; researched companies commit sequentially before the next mention.
+Each operation saves input, raw response, response ID, usage and parsed output. The extraction/classification call budget and per-response token caps are enforced. Resolution and entailment have finite per-input workflows but do not yet share the global call budget. Actual dollar cost stays unknown until pricing/accounting is added. The OpenAI client disables automatic retries. A session advisory lock prevents concurrent identical runs; a transaction lock protects ledger writes. Claims and run results share one transaction; researched companies commit sequentially before the next mention.
 
-Exact source text, speaker labels and numbers are checked. Company names can receive an exact quoted context segment; uniquely matching quote locators can be corrected without editing quote text. These checks do not prove entailment, completeness, true identity or factual accuracy. All model claims need review. Some supported paraphrases will be conservatively rejected.
+Exact source text, speaker labels and numbers are checked. Company names can receive an exact quoted context segment; uniquely matching quote locators can be corrected without editing quote text. These checks do not prove entailment, completeness, true identity or factual accuracy. Before identity resolution, an independent model checks claim entailment against original transcript passages, with one bounded context expansion when insufficient. Only SUPPORTED claims proceed; others remain in run artifacts. This checks faithful attribution, not real-world truth, and can reject valid paraphrases. All model claims need review. Some supported paraphrases will be conservatively rejected.
 
-Company mentions must pass lookup → resolve → commit. The default `--matching lexical` uses identifier/name candidates and an LLM decision; `--matching hybrid` adds cosine candidates and remains experimental. Only NEW_COMPANY triggers synchronous Exa research, followed by identity rechecking before commit. Unknown fields remain null. Sectors/products/brands are excluded; uncertain identities and affected claims are withheld in run artifacts. Subsidiaries remain distinct companies. People remain episode-scoped.
+Company mentions must pass lookup → resolve → commit. The default `--matching lexical` uses identifier/name candidates and an LLM decision; `--matching hybrid` adds cosine candidates and remains experimental. Only NEW_COMPANY triggers synchronous Exa research, followed by identity rechecking before commit. Identity inputs keep exact transcript segments separate from episode descriptions/show notes and candidate links. Every proposed match receives a separate pair check. A domain must pass a corporate-scope check; rejected regional domains remain observations. Unknown fields remain null. Sectors/products/brands are excluded; uncertain identities and affected claims are withheld in run artifacts. Subsidiaries remain distinct companies. People remain episode-scoped.
 
 Both retrievers currently scan the small local ledger; indexed retrieval, asynchronous enrichment, discovery agents and the human-reviewed 10–20 episode benchmark remain future work. Changing extraction prompts may produce separate claims; exact completed-run replay is deduplicated.
 
@@ -57,6 +57,6 @@ pnpm --dir web build
 
 Tests use isolated PostgreSQL schemas. Source, test, prompt and migration files stay under 250 lines; generated dependency lockfiles are exempt.
 
-Run the real-provider comparison with `uv run python -m evaluation.compare evaluation/cases.jsonl --label YOUR_FRESH_LABEL`, then `uv run python -m evaluation.report YOUR_FRESH_LABEL`. Each method starts in its own empty database schema and shares a durable cache of real provider responses. See [matching results](docs/matching-comparison.md).
+Run the real-provider comparison with `uv run python -m evaluation.compare evaluation/cases.jsonl --label YOUR_FRESH_LABEL`, then `uv run python -m evaluation.report YOUR_FRESH_LABEL`. Each method starts in its own empty database schema and shares a durable cache of real provider responses. See [matching results](docs/matching-comparison.md) and [evidence-packet evaluation](docs/evidence-packets-evaluation.md).
 
 See [schema](docs/schema.md), [reused code](docs/reuse.md), and [verification](docs/verification.md).

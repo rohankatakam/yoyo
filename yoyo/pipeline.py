@@ -17,6 +17,7 @@ from .source import source_record
 from .telemetry import Trace
 from .transcripts.normalize import normalize
 from .validate import validate_annotation, validate_claim
+from .verify_claims import verify_findings, PROMPT as VERIFY_PROMPT
 
 
 def chunks(segments, limit=14000):
@@ -59,9 +60,9 @@ def process(
         "source_id": source["id"],
         "model": settings.model,
         "max_calls": max_calls,
-        "pipeline": "claims-v4-resolution",
+        "pipeline": "claims-v5-evidence-packets",
         "matching": matching,
-        "prompt_hash": digest([EXTRACT, ANNOTATE]),
+        "prompt_hash": digest([EXTRACT, ANNOTATE, VERIFY_PROMPT]),
     }
     state = State(inputs, resume)
     if state.result:
@@ -154,14 +155,15 @@ def process(
             with db.engine.connect() as conn:
                 state.progress["ledger_before"] = counts(conn)
             state.save()
+        verified = verify_findings(list(accepted.values()), source, state, trace)
         findings, annotations, resolved_ids, added_ids = resolve_findings(
-            source, list(accepted.values()), annotations, state, trace, matching
+            source, verified, annotations, state, trace, matching
         )
         provenance = {
             "model": settings.model,
             "prompt_hash": inputs["prompt_hash"],
             "run_id": state.id,
-            "validation": "structural_and_quote_checks_only",
+            "validation": "structural_quote_and_model_entailment_checks",
         }
         with trace.span(
             "commit", {"accepted": len(accepted), "rejected": len(rejected)}

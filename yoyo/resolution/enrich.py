@@ -3,12 +3,19 @@ from urllib.parse import urlparse
 from ..company_models import CompanyProfile
 from .contracts import Enrichment
 from .prompts import ENRICH
+from .websites import verify_website
 
 
 def enrich(mention, research):
     # Both retrieval options issue identical research for the same NEW_COMPANY mention.
+    target_segments = [
+        s["text"]
+        for s in mention.transcript_evidence
+        if mention.name.casefold() in s["text"].casefold()
+    ]
+    search_context = " ".join(target_segments)[:600] or mention.context[:300]
     queries = [
-        f"{mention.name} official company {mention.context[:300]}",
+        f"{mention.name} official company {search_context}",
         f"{mention.name} company LinkedIn ownership funding headquarters products markets",
     ]
     sources = {}
@@ -91,6 +98,14 @@ def enrich(mention, research):
                 continue
         if field == "linkedin_url":
             parsed = urlparse(str(value))
+            cited_urls = [urlparse(pages[c.source]["url"]) for c in attribute.citations]
+            if not any(
+                u.hostname in {"linkedin.com", "www.linkedin.com"}
+                and u.path.rstrip("/") == parsed.path.rstrip("/")
+                for u in cited_urls
+            ):
+                rejected.append(attribute.model_dump())
+                continue
             if parsed.hostname not in {
                 "linkedin.com",
                 "www.linkedin.com",
@@ -106,8 +121,18 @@ def enrich(mention, research):
             continue
         values[field] = value
         evidence[field] = [citation(c) for c in attribute.citations]
+    observed_domains = []
+    if values.get("domain"):
+        accepted, observation = verify_website(
+            result.canonical_name, values["domain"], pages, research
+        )
+        observed_domains.append(observation)
+        if not accepted:
+            values.pop("domain")
+            evidence.pop("domain", None)
     return (
         {
+            "observed_domains": observed_domains,
             "name": result.canonical_name,
             "profile": values,
             "evidence": evidence,

@@ -58,6 +58,7 @@ class Ledger:
         ids = [stable("web-source", digest(page)) for page in pages]
         identity = {
             "status": "source_verified",
+            "observed_domains": record.get("observed_domains", []),
             "aliases": [mention.name],
             "citations": [
                 dict(c, source_id=ids[c["source"]])
